@@ -42,7 +42,7 @@ var _ = Describe("Main", func() {
 
 			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 
-			Eventually(session).Should(gexec.Exit())
+			Eventually(session).Should(gexec.Exit(0))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(session.Out).To(gbytes.Say("foo"))
 
@@ -52,6 +52,17 @@ var _ = Describe("Main", func() {
 			Eventually(session).Should(gexec.Exit())
 
 			Expect(session.Out).To(gbytes.Say(systemHostname))
+		})
+	})
+
+	Context("process exit code forwarding", func() {
+		It("exits with the same code as the internal process", func() {
+			cmd := exec.Command("sudo", hellPath, "bash", "-c", "exit 42")
+
+			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+
+			Eventually(session).Should(gexec.Exit(42))
+			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 })
