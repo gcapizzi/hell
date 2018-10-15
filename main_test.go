@@ -19,7 +19,7 @@ var _ = Describe("Main", func() {
 	})
 
 	It("runs an arbitrary command", func() {
-		session, err := gexec.Start(exec.Command("sudo", hellPath, "echo", "bye, world!"), GinkgoWriter, GinkgoWriter)
+		session, err := gexec.Start(exec.Command(hellPath, "echo", "bye, world!"), GinkgoWriter, GinkgoWriter)
 
 		Eventually(session).Should(gexec.Exit())
 		Expect(err).NotTo(HaveOccurred())
@@ -38,7 +38,7 @@ var _ = Describe("Main", func() {
 		})
 
 		It("runs the command in its own UPS namespace", func() {
-			cmd := exec.Command("sudo", hellPath, "bash", "-c", "hostname foo; hostname")
+			cmd := exec.Command(hellPath, "bash", "-c", "hostname foo; hostname")
 
 			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 
@@ -57,7 +57,7 @@ var _ = Describe("Main", func() {
 
 	Context("process exit code forwarding", func() {
 		It("exits with the same code as the internal process", func() {
-			cmd := exec.Command("sudo", hellPath, "bash", "-c", "exit 42")
+			cmd := exec.Command(hellPath, "bash", "-c", "exit 42")
 
 			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 
