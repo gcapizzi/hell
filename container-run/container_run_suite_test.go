@@ -13,11 +13,11 @@ func TestContainerRun(t *testing.T) {
 	RunSpecs(t, "ContainerRun Suite")
 }
 
-var hellPath string
+var containerRunPath string
 
 var _ = BeforeSuite(func() {
 	var err error
-	hellPath, err = gexec.Build("github.com/gcapizzi/hell/container-run")
+	containerRunPath, err = gexec.Build("github.com/gcapizzi/hell/container-run")
 	Expect(err).NotTo(HaveOccurred())
 })
 
