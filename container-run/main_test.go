@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"io/ioutil"
 	"os/exec"
 
 	. "github.com/onsi/ginkgo"
@@ -55,6 +56,23 @@ var _ = Describe("Main", func() {
 
 			Eventually(session).Should(gexec.Exit(42))
 			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+
+	Context("cpu affinity", func() {
+		It("runs the command in the specified cpuset", func() {
+			cmd := exec.Command(pinCpuPath, "-cpuset", "test", "-cpus", "0")
+			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			Eventually(session).Should(gexec.Exit(0))
+
+			cmd = exec.Command(containerRunPath, "-cpuset", "test", "sleep", "2")
+			session, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			defer session.Interrupt()
+
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(func() ([]byte, error) {
+				return ioutil.ReadFile("/sys/fs/cgroup/cpuset/test/tasks")
+			}).ShouldNot(BeEmpty())
 		})
 	})
 })

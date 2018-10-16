@@ -14,10 +14,13 @@ func TestContainerRun(t *testing.T) {
 }
 
 var containerRunPath string
+var pinCpuPath string
 
 var _ = BeforeSuite(func() {
 	var err error
 	containerRunPath, err = gexec.Build("github.com/gcapizzi/hell/container-run")
+	Expect(err).NotTo(HaveOccurred())
+	pinCpuPath, err = gexec.Build("github.com/gcapizzi/hell/pin-cpu")
 	Expect(err).NotTo(HaveOccurred())
 })
 
