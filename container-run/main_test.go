@@ -10,14 +10,6 @@ import (
 )
 
 var _ = Describe("Main", func() {
-	var hellPath string
-
-	BeforeEach(func() {
-		var err error
-		hellPath, err = gexec.Build("github.com/gcapizzi/hell")
-		Expect(err).NotTo(HaveOccurred())
-	})
-
 	It("runs an arbitrary command", func() {
 		session, err := gexec.Start(exec.Command(hellPath, "echo", "bye, world!"), GinkgoWriter, GinkgoWriter)
 
