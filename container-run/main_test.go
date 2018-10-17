@@ -62,7 +62,7 @@ var _ = Describe("Main", func() {
 		})
 	})
 
-	Context("cpu affinity", func() {
+	Context("cgroup", func() {
 		It("runs the command in the specified cgroup", func() {
 			cmd := exec.Command(pinCpuPath, "-cpuset", "test", "-cpus", "0")
 			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
@@ -88,6 +88,10 @@ var _ = Describe("Main", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(func() ([]byte, error) {
 				return ioutil.ReadFile(filepath.Join("/sys/fs/cgroup/cpuset", cgroupName, "tasks"))
+			}).ShouldNot(BeEmpty())
+
+			Eventually(func() ([]byte, error) {
+				return ioutil.ReadFile(filepath.Join("/sys/fs/cgroup/memory", cgroupName, "tasks"))
 			}).ShouldNot(BeEmpty())
 		})
 	})

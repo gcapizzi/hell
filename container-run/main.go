@@ -65,6 +65,22 @@ func child() {
 }
 
 func setupCGroup(name string) error {
+	pid := os.Getpid()
+
+	err := setupCpuset(name, pid)
+	if err != nil {
+		return err
+	}
+
+	err = setupMemory(name, pid)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func setupCpuset(name string, pid int) error {
 	if _, err := os.Stat(cgroupPath("cpuset", name)); os.IsNotExist(err) {
 		os.Mkdir(cgroupPath("cpuset", name), 0755)
 
@@ -79,8 +95,15 @@ func setupCGroup(name string) error {
 		}
 	}
 
-	pid := os.Getpid()
 	return ioutil.WriteFile(cgroupPath("cpuset", name, "tasks"), []byte(strconv.Itoa(pid)), 0755)
+}
+
+func setupMemory(name string, pid int) error {
+	if _, err := os.Stat(cgroupPath("memory", name)); os.IsNotExist(err) {
+		os.Mkdir(cgroupPath("memory", name), 0755)
+	}
+
+	return ioutil.WriteFile(cgroupPath("memory", name, "tasks"), []byte(strconv.Itoa(pid)), 0755)
 }
 
 func must(err error) {
