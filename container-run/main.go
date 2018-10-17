@@ -21,6 +21,8 @@ func main() {
 func parent() {
 	cmd := exec.Command("/proc/self/exe", append([]string{"child"}, os.Args[1:]...)...)
 	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Cloneflags: syscall.CLONE_NEWUTS,
 	}
@@ -46,6 +48,8 @@ func child() {
 
 	cmd := exec.Command(flagSet.Args()[0], flagSet.Args()[1:]...)
 	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
 
 	pid := os.Getpid()
 	ioutil.WriteFile(filepath.Join("/sys/fs/cgroup/cpuset", cpusetName, "tasks"), []byte(strconv.Itoa(pid)), 0755)
