@@ -34,11 +34,11 @@ func parent() {
 }
 
 func child() {
-	var cpusetName string
+	var cgroupName string
 	var rootfsPath string
 
 	flagSet := flag.NewFlagSet("child", flag.ExitOnError)
-	flagSet.StringVar(&cpusetName, "cpuset", "", "the cpuset name")
+	flagSet.StringVar(&cgroupName, "cgroup", "", "the cgroup name")
 	flagSet.StringVar(&rootfsPath, "rootfs", "", "the rootfs path")
 	flagSet.Parse(os.Args[2:])
 
@@ -51,9 +51,7 @@ func child() {
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
 
-	pid := os.Getpid()
-	ioutil.WriteFile(filepath.Join("/sys/fs/cgroup/cpuset", cpusetName, "tasks"), []byte(strconv.Itoa(pid)), 0755)
-
+	must(setupCGroup(cgroupName))
 	oldRootfsPath := filepath.Join(rootfsPath, "oldrootfs")
 	must(syscall.Mount(rootfsPath, rootfsPath, "", syscall.MS_BIND, ""))
 	must(os.MkdirAll(oldRootfsPath, 0700))
@@ -64,6 +62,25 @@ func child() {
 	if err != nil {
 		exitWithError(err)
 	}
+}
+
+func setupCGroup(name string) error {
+	if _, err := os.Stat(cgroupPath("cpuset", name)); os.IsNotExist(err) {
+		os.Mkdir(cgroupPath("cpuset", name), 0755)
+
+		err := copyFile(cgroupPath("cpuset", "cpuset.cpus"), cgroupPath("cpuset", name, "cpuset.cpus"))
+		if err != nil {
+			return err
+		}
+
+		err = copyFile(cgroupPath("cpuset", "cpuset.mems"), cgroupPath("cpuset", name, "cpuset.mems"))
+		if err != nil {
+			return err
+		}
+	}
+
+	pid := os.Getpid()
+	return ioutil.WriteFile(cgroupPath("cpuset", name, "tasks"), []byte(strconv.Itoa(pid)), 0755)
 }
 
 func must(err error) {
@@ -80,4 +97,22 @@ func exitWithError(err error) {
 	} else {
 		panic(err)
 	}
+}
+
+func cgroupPath(parts ...string) string {
+	return filepath.Join(append([]string{"/sys/fs/cgroup"}, parts...)...)
+}
+
+func copyFile(src, dest string) error {
+	srcContents, err := ioutil.ReadFile(src)
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(dest, []byte(srcContents), 0755)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
