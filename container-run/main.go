@@ -29,13 +29,7 @@ func parent() {
 
 	err := cmd.Run()
 	if err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			if status, ok := exitErr.Sys().(syscall.WaitStatus); ok {
-				os.Exit(status.ExitStatus())
-			}
-		} else {
-			panic(err)
-		}
+		exitWithError(err)
 	}
 }
 
@@ -56,12 +50,16 @@ func child() {
 
 	err := cmd.Run()
 	if err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			if status, ok := exitErr.Sys().(syscall.WaitStatus); ok {
-				os.Exit(status.ExitStatus())
-			}
-		} else {
-			panic(err)
+		exitWithError(err)
+	}
+}
+
+func exitWithError(err error) {
+	if exitErr, ok := err.(*exec.ExitError); ok {
+		if status, ok := exitErr.Sys().(syscall.WaitStatus); ok {
+			os.Exit(status.ExitStatus())
 		}
+	} else {
+		panic(err)
 	}
 }
