@@ -2,10 +2,9 @@ package main_test
 
 import (
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
-	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -63,26 +62,35 @@ var _ = Describe("Main", func() {
 	})
 
 	Context("cgroup", func() {
+		var session *gexec.Session
+		var err error
+
+		cgroupName := "test"
+
+		AfterEach(func() {
+			session.Kill().Wait(5)
+			Expect(os.RemoveAll(filepath.Join("/sys/fs/cgroup/cpuset", cgroupName))).To(Succeed())
+			Expect(os.RemoveAll(filepath.Join("/sys/fs/cgroup/memory", cgroupName))).To(Succeed())
+		})
+
 		It("runs the command in the specified cgroup", func() {
-			cmd := exec.Command(pinCpuPath, "-cpuset", "test", "-cpus", "0")
-			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			cmd := exec.Command(pinCpuPath, "-cpuset", cgroupName, "-cpus", "0")
+			session, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			Eventually(session).Should(gexec.Exit(0))
 
-			cmd = exec.Command(containerRunPath, "-cgroup", "test", "-rootfs", "busybox", "sleep", "2")
+			cmd = exec.Command(containerRunPath, "-cgroup", cgroupName, "-rootfs", "busybox", "sleep", "2")
 			session, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			defer session.Interrupt()
 
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(func() ([]byte, error) {
-				return ioutil.ReadFile("/sys/fs/cgroup/cpuset/test/tasks")
+				return ioutil.ReadFile(filepath.Join("/sys/fs/cgroup/cpuset", cgroupName, "tasks"))
 			}).ShouldNot(BeEmpty())
 		})
 
 		It("sets up the cgroup if it doesn't exist", func() {
-			cgroupName := strconv.FormatInt(time.Now().UnixNano(), 16)
-
 			cmd := exec.Command(containerRunPath, "-cgroup", cgroupName, "-rootfs", "busybox", "sleep", "2")
-			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			session, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			defer session.Interrupt()
 
 			Expect(err).NotTo(HaveOccurred())
