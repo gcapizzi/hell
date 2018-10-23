@@ -21,6 +21,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	err = ioutil.WriteFile(cgroupPath(cgroupName, "memory.memsw.limit_in_bytes"), []byte(maxMemory), 0755)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func cgroupPath(parts ...string) string {
