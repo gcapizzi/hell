@@ -51,14 +51,22 @@ func child() {
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
 
-	must(setupCGroup(cgroupName))
-	oldRootfsPath := filepath.Join(rootfsPath, "oldrootfs")
-	must(syscall.Mount(rootfsPath, rootfsPath, "", syscall.MS_BIND, ""))
-	must(os.MkdirAll(oldRootfsPath, 0700))
-	must(syscall.PivotRoot(rootfsPath, oldRootfsPath))
-	must(os.Chdir("/"))
+	if cgroupName != "" {
+		must(setupCGroup(cgroupName))
+	}
 
-	err := cmd.Run()
+	must(setupRootFS(rootfsPath))
+
+	err := cmd.Start()
+	if err != nil {
+		exitWithError(err)
+	}
+
+	if cgroupName != "" {
+		must(moveParentPidToRootCgroups())
+	}
+
+	err = cmd.Wait()
 	if err != nil {
 		exitWithError(err)
 	}
@@ -110,6 +118,47 @@ func must(err error) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func setupRootFS(path string) error {
+	oldRootfsPath := filepath.Join(path, "oldrootfs")
+
+	err := syscall.Mount(path, path, "", syscall.MS_BIND, "")
+	if err != nil {
+		return err
+	}
+
+	err = os.MkdirAll(oldRootfsPath, 0700)
+	if err != nil {
+		return err
+	}
+
+	err = syscall.PivotRoot(path, oldRootfsPath)
+	if err != nil {
+		return err
+	}
+
+	return os.Chdir("/")
+}
+
+func moveParentPidToRootCgroups() error {
+	pid := os.Getpid()
+
+	err := movePidToRootCgroup(pid, "cpuset")
+	if err != nil {
+		return err
+	}
+
+	err = movePidToRootCgroup(pid, "memory")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func movePidToRootCgroup(pid int, cgroupType string) error {
+	return ioutil.WriteFile(filepath.Join("/oldrootfs/sys/fs/cgroup", cgroupType, "tasks"), []byte(strconv.Itoa(pid)), 0755)
 }
 
 func exitWithError(err error) {
