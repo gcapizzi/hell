@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -125,19 +126,19 @@ func must(err error) {
 func setupRootFS(path string) error {
 	oldRootfsPath := filepath.Join(path, "oldrootfs")
 
-	err := unix.Mount(path, path, "", unix.MS_BIND, "")
+	err := unix.Mount(path, path, "", unix.MS_BIND|unix.MS_PRIVATE, "")
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to bind mount rootfs: %s", err.Error())
 	}
 
 	err = os.MkdirAll(oldRootfsPath, 0700)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to created oldrootfs dir: %s", err)
 	}
 
 	err = unix.PivotRoot(path, oldRootfsPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to pivot_root %s with oldroot %s: %s", path, oldRootfsPath, err)
 	}
 
 	return os.Chdir("/")
