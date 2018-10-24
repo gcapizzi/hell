@@ -14,7 +14,7 @@ import (
 
 var _ = Describe("Main", func() {
 	It("runs an arbitrary command", func() {
-		session, err := gexec.Start(exec.Command(containerRunPath, "-rootfs", "busybox", "echo", "bye, world!"), GinkgoWriter, GinkgoWriter)
+		session, err := gexec.Start(exec.Command(containerRunPath, "-rootfs", rootfsPath, "echo", "bye, world!"), GinkgoWriter, GinkgoWriter)
 
 		Eventually(session).Should(gexec.Exit())
 		Expect(err).NotTo(HaveOccurred())
@@ -33,7 +33,7 @@ var _ = Describe("Main", func() {
 		})
 
 		It("runs the command in its own UPS namespace", func() {
-			cmd := exec.Command(containerRunPath, "-rootfs", "busybox", "sh", "-c", "hostname foo; hostname")
+			cmd := exec.Command(containerRunPath, "-rootfs", rootfsPath, "sh", "-c", "hostname foo; hostname")
 
 			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 
@@ -52,7 +52,7 @@ var _ = Describe("Main", func() {
 
 	Context("process exit code forwarding", func() {
 		It("exits with the same code as the internal process", func() {
-			cmd := exec.Command(containerRunPath, "-rootfs", "busybox", "sh", "-c", "exit 42")
+			cmd := exec.Command(containerRunPath, "-rootfs", rootfsPath, "sh", "-c", "exit 42")
 
 			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 
@@ -78,7 +78,7 @@ var _ = Describe("Main", func() {
 			session, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			Eventually(session).Should(gexec.Exit(0))
 
-			cmd = exec.Command(containerRunPath, "-cgroup", cgroupName, "-rootfs", "busybox", "sleep", "2")
+			cmd = exec.Command(containerRunPath, "-cgroup", cgroupName, "-rootfs", rootfsPath, "sleep", "2")
 			session, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			defer session.Interrupt()
 
@@ -89,7 +89,7 @@ var _ = Describe("Main", func() {
 		})
 
 		It("sets up the cgroup if it doesn't exist", func() {
-			cmd := exec.Command(containerRunPath, "-cgroup", cgroupName, "-rootfs", "busybox", "sleep", "2")
+			cmd := exec.Command(containerRunPath, "-cgroup", cgroupName, "-rootfs", rootfsPath, "sleep", "2")
 			session, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			defer session.Interrupt()
 
