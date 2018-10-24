@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"syscall"
+
+	"golang.org/x/sys/unix"
 )
 
 func main() {
@@ -123,7 +125,7 @@ func must(err error) {
 func setupRootFS(path string) error {
 	oldRootfsPath := filepath.Join(path, "oldrootfs")
 
-	err := syscall.Mount(path, path, "", syscall.MS_BIND, "")
+	err := unix.Mount(path, path, "", unix.MS_BIND, "")
 	if err != nil {
 		return err
 	}
@@ -133,7 +135,7 @@ func setupRootFS(path string) error {
 		return err
 	}
 
-	err = syscall.PivotRoot(path, oldRootfsPath)
+	err = unix.PivotRoot(path, oldRootfsPath)
 	if err != nil {
 		return err
 	}
